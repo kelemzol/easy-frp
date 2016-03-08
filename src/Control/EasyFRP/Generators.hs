@@ -5,7 +5,6 @@ import Control.Concurrent
 import Control.Exception
 import Control.Concurrent.MVar
 import Control.Concurrent.Chan
-import Control.Monad.IO.Class
 import Control.Monad
 
 import Control.Monad.State.Lazy

@@ -5,7 +5,6 @@ import Control.Concurrent
 import Control.Exception
 import Control.Concurrent.MVar
 import Control.Concurrent.Chan
-import Control.Monad.IO.Class
 import Control.Monad
 
 import Control.Monad.State.Lazy
@@ -105,3 +104,14 @@ io m = do
         item <- m
         writeChan chan item
     return sig
+
+io1 :: (MonadIO m) => Signal a -> (a -> IO b) -> FRPT m (Signal b)
+io1 sig m = do
+    chan <- subscibe sig
+    (chan', sig') <- node
+    forkLoop $ do
+        item <- readChan chan
+        item' <- m item
+        writeChan chan' item'
+    return sig'
+
