@@ -11,23 +11,31 @@ import Control.Monad.State.Lazy
 
 import Control.EasyFRP.Core
 
+
+
 rec :: (MonadIO m) => (Signal a -> FRPT m (Signal a)) -> FRPT m (Signal a)
-rec gsig = undefined
+rec gsig = do
+    (chan', sig') <- node
+    sig <- gsig sig'
+    chan <- subscribe sig
+    forkLoop $ readChan chan >>= writeChan chan'
+    return sig
+
 
 rec2 :: (MonadIO m) => (Signal a -> FRPT m (Signal b)) -> (Signal b -> FRPT m (Signal a)) -> FRPT m (Signal a, Signal b)
 rec2 = undefined
 
 terminateWhen :: (MonadIO m) => Signal a -> (a -> Bool) -> FRPT m ()
 terminateWhen sig cond = do
-    chan <- subscibe sig
+    chan <- subscribe sig
     st <- get
     forkLoop $ do
         item <- readChan chan
         if cond item then putMVar (terminateFlag st) () else return ()
 
-foldF :: (MonadIO m, Num b) => Signal a -> b -> (a -> b -> b) -> FRPT m (Signal b)
-foldF sig b f = do
-    chan <- subscibe sig
+foldrF :: (MonadIO m, Num b) => Signal a -> b -> (a -> b -> b) -> FRPT m (Signal b)
+foldrF sig b f = do
+    chan <- subscribe sig
     (chan', sig') <- node
     mvar <- liftIO $ newMVar b
     forkLoop $ do
@@ -38,12 +46,16 @@ foldF sig b f = do
         putMVar mvar val'
     return sig'
 
+foldlF :: (MonadIO m, Num b) => Signal a -> b -> (b -> a -> b) -> FRPT m (Signal b)
+foldlF sig b f = foldrF sig b (flip f)
+
+
 sumF :: (MonadIO m, Num a) => Signal a -> FRPT m (Signal a)
-sumF sig = foldF sig 0 (+)
+sumF sig = foldrF sig 0 (+)
 
 mapF :: (MonadIO m) => Signal a -> (a -> b) -> FRPT m (Signal b)
 mapF sig f = do
-    chan <- subscibe sig
+    chan <- subscribe sig
     (chan', sig') <- node
     forkLoop $ do
         item <- readChan chan
@@ -53,7 +65,7 @@ mapF sig f = do
 mapF2 :: (MonadIO m) => Signal a  -> Signal b -> (a -> b -> c) -> FRPT m (Signal c)
 mapF2 sA sB f = do
     sZ <- zip2F sA sB
-    chan <- subscibe sZ
+    chan <- subscribe sZ
     (chan', sig') <- node
     forkLoop $ do
             (itemA, itemB) <- readChan chan
@@ -62,8 +74,8 @@ mapF2 sA sB f = do
 
 merge2F :: (MonadIO m) => Signal a -> Signal a -> FRPT m (Signal a)
 merge2F sA sB = do
-    chanA <- subscibe sA
-    chanB <- subscibe sB
+    chanA <- subscribe sA
+    chanB <- subscribe sB
     (chan', sig) <- node
     forkLoop $ readChan chanA >>= writeChan chan'
     forkLoop $ readChan chanB >>= writeChan chan'
@@ -71,8 +83,8 @@ merge2F sA sB = do
 
 zip2F :: (MonadIO m) => Signal a  -> Signal b -> FRPT m (Signal (a, b))
 zip2F sA sB = do
-    chanA <- subscibe sA
-    chanB <- subscibe sB
+    chanA <- subscribe sA
+    chanB <- subscribe sB
     (chan', sig') <- node
     registerA <- liftIO $ newEmptyMVar
     registerB <- liftIO $ newEmptyMVar
@@ -90,7 +102,7 @@ zip2F sA sB = do
 
 filterF :: (MonadIO m) => Signal a -> (a -> Bool) -> FRPT m (Signal a)
 filterF sig cond = do
-    chan <- subscibe sig
+    chan <- subscribe sig
     (chan', sig') <- node
     forkLoop $ do
         item <- readChan chan
@@ -107,7 +119,7 @@ io m = do
 
 io1 :: (MonadIO m) => Signal a -> (a -> IO b) -> FRPT m (Signal b)
 io1 sig m = do
-    chan <- subscibe sig
+    chan <- subscribe sig
     (chan', sig') <- node
     forkLoop $ do
         item <- readChan chan

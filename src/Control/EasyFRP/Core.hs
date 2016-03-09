@@ -14,8 +14,11 @@ import Control.Monad.State.Lazy
 newtype FRPT (m :: * -> *) a = FRPT { unFRPT :: StateT FRPState m a }
   deriving (Functor, Applicative, Monad, MonadIO, MonadState FRPState)
 
---data Signal a = Signal (MVar [Chan a])
-data Signal a = Signal (Chan (Chan a))
+data Signal a
+  = Signal
+    { subscribeChan :: (Chan (Chan a))
+    , inputChan     :: (Chan a)
+    }
 
 data FRPState
   = FRPState
@@ -48,8 +51,8 @@ runFRPT frpt = do
     killThreads :: (MonadIO m) => MVar [ThreadId] -> m ()
     killThreads thrs = liftIO $ mapM_ (forkIO . killThread) =<< takeMVar thrs
 
-subscibe :: (MonadIO m) => Signal a -> m (Chan a)
-subscibe (Signal chanList) = do
+subscribe :: (MonadIO m) => Signal a -> m (Chan a)
+subscribe (Signal chanList _) = do
     chan <- liftIO $ newChan
     liftIO $ writeChan chanList chan
     return chan
@@ -75,7 +78,21 @@ node = do
         writeMVar value item
         forM_ list $ \ chan -> do
             writeChan chan item
-    return (chan, Signal newChans)
+    return (chan, Signal newChans chan)
+
+pushF :: (MonadIO m) => Signal a -> a -> FRPT m ()
+pushF (Signal _ chan) = liftIO . writeChan chan
+
+(<<-) :: (MonadIO m) => Signal a -> a -> FRPT m ()
+(<<-) = pushF
+
+signalMergeF :: (MonadIO m) => Signal a -> Signal a -> FRPT m () -- Optimize issue: instead of subcribe, put dest chanel into subscribe-chanel of source signal
+signalMergeF (Signal _ chan') sig = do
+    chan <- subscribe sig
+    forkLoop $ readChan chan >>= writeChan chan'
+
+(<--) :: (MonadIO m) => Signal a -> Signal a -> FRPT m ()
+(<--) = signalMergeF
 
 writeMVar :: MVar a -> a -> IO ()
 writeMVar mvar value = mask_ $ do
