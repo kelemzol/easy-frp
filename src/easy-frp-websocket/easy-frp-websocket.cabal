@@ -1,0 +1,29 @@
+name:                easy-frp-websocket
+version:             0.1.0.0
+synopsis:            websocket support for Easy-FRP
+-- description:         
+homepage:            https://github.com/kelemzol/easy-frp
+-- license:             
+-- license-file:        LICENSE
+author:              Zoltán Kelemen
+maintainer:          kelemzol@elte.hu
+-- copyright:           
+category:            Language
+build-type:          Simple
+-- extra-source-files:  
+cabal-version:       >=1.10
+
+library
+  exposed-modules:     Control.EasyFRP.WebSocket
+
+  other-modules:       Control.EasyFRP.WebSocket
+                     , Control.EasyFRP.Examples.WebSocketExample
+
+  build-depends:       base >=4.8 && <4.9
+                     , ghc >=7.10 && <7.11
+                     , mtl >=2.2 && <2.3
+                     , easy-frp
+                     , websockets >= 0.9.6.1
+
+
+  default-language:  Haskell2010
