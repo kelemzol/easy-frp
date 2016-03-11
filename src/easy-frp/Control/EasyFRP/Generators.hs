@@ -34,9 +34,27 @@ instance Num (TimeUnit -> Time) where
     signum = undefined
     abs = undefined
 
+stdInNewLine :: (MonadIO m) => FRPT m (Signal String)
+stdInNewLine = io getLine
 
-consoleIn :: (MonadIO m) => FRPT m (Signal String)
-consoleIn = io getLine
+stdInNewChar :: (MonadIO m) => FRPT m (Signal Char)
+stdInNewChar = do
+    (chan, sig) <- node
+    forkLoop $ do
+        l <- getLine
+        forM_ l (writeChan chan)
+    return sig
+
+clockedForward :: (MonadIO m) => Signal clock -> Signal a -> FRPT m (Signal a)
+clockedForward sigA sigB = do
+    chanA <- subscribe sigA
+    chanB <- subscribe sigB
+    (chan, sig) <- node
+    forkLoop $ do
+        val <- readChan chanB
+        _ <- readChan chanA
+        writeChan chan val
+    return sig
 
 stepping :: (MonadIO m, Num a, Integral a) => a -> a -> TimeUnit -> a -> FRPT m (Signal a)
 stepping from much unit num = do

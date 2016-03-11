@@ -21,9 +21,54 @@ rec gsig = do
     forkLoop $ readChan chan >>= writeChan chan'
     return sig
 
-
 rec2 :: (MonadIO m) => (Signal a -> FRPT m (Signal b)) -> (Signal b -> FRPT m (Signal a)) -> FRPT m (Signal a, Signal b)
 rec2 = undefined
+
+data Alt2 a b = Alt21 a | Alt22 b
+data Alt3 a b c = Alt31 a | Alt32 b | Alt33 c
+data Alt4 a b c d = Alt41 a | Alt42 b | Alt43 c | Alt44 d
+
+split2F :: (MonadIO m) => Signal a -> (a -> Alt2 b c) -> FRPT m (Signal b, Signal c)
+split2F sig f = do
+    chan <- subscribe sig
+    (chanA, sigA) <- node
+    (chanB, sigB) <- node
+    forkLoop $ do
+        item <- readChan chan
+        case f item of
+            (Alt21 i) -> writeChan chanA i
+            (Alt22 i) -> writeChan chanB i
+    return (sigA, sigB)
+
+split3F :: (MonadIO m) => Signal a -> (a -> Alt3 b c d) -> FRPT m (Signal b, Signal c, Signal d)
+split3F sig f = do
+    chan <- subscribe sig
+    (chanA, sigA) <- node
+    (chanB, sigB) <- node
+    (chanC, sigC) <- node
+    forkLoop $ do
+        item <- readChan chan
+        case f item of
+            (Alt31 i) -> writeChan chanA i
+            (Alt32 i) -> writeChan chanB i
+            (Alt33 i) -> writeChan chanC i
+    return (sigA, sigB, sigC)
+
+split4F :: (MonadIO m) => Signal a -> (a -> Alt4 b c d e) -> FRPT m (Signal b, Signal c, Signal d, Signal e)
+split4F sig f = do
+    chan <- subscribe sig
+    (chanA, sigA) <- node
+    (chanB, sigB) <- node
+    (chanC, sigC) <- node
+    (chanD, sigD) <- node
+    forkLoop $ do
+        item <- readChan chan
+        case f item of
+            (Alt41 i) -> writeChan chanA i
+            (Alt42 i) -> writeChan chanB i
+            (Alt43 i) -> writeChan chanC i
+            (Alt44 i) -> writeChan chanD i
+    return (sigA, sigB, sigC, sigD)
 
 terminateWhen :: (MonadIO m) => Signal a -> (a -> Bool) -> FRPT m ()
 terminateWhen sig cond = do

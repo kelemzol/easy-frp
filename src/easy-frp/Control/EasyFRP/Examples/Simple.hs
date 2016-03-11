@@ -6,7 +6,7 @@ import Control.EasyFRP
 
 example :: IO ()
 example = runFRPT $ do
-    consS <- consoleIn
+    consS <- stdInNewLine
     --steppingS <- stepping 0 5
     clockS <- clock Sec 5
     steppingS <- foldlF clockS 0 (const . (+1))
