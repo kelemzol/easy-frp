@@ -1,10 +1,7 @@
 
-module Control.EasyFRP where
+module Control.EasyFRP.Examples where
 
-import Control.EasyFRP.Core
-import Control.EasyFRP.Combinators
-import Control.EasyFRP.Generators
-
+import Control.EasyFRP
 
 
 example :: IO ()
@@ -23,4 +20,5 @@ prEx = runFRPT $ do
     input <- rec prompt
     terminateWhen input (== "exit")
     pushF input "$"
+
 
