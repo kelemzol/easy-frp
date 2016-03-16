@@ -1,5 +1,5 @@
 
-module Control.EasyFRP.Examples.WebSocket where
+module Control.EasyFRP.Examples.WebSocketExample where
 
 import Control.EasyFRP
 import Control.EasyFRP.WebSocket
