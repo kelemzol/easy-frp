@@ -1,5 +1,5 @@
 
-module Control.EasyFRP.Examples where
+module Control.EasyFRP.Examples.Simple where
 
 import Control.EasyFRP
 

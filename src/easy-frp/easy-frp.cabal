@@ -19,7 +19,7 @@ library
   other-modules:       Control.EasyFRP.Core
                      , Control.EasyFRP.Combinators
                      , Control.EasyFRP.Generators
-                     , Control.EasyFRP.Examples
+                     , Control.EasyFRP.Examples.Simple
 
   build-depends:       base >=4.8 && <4.9
                      , ghc >=7.10 && <7.11

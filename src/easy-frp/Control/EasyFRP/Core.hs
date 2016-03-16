@@ -98,3 +98,23 @@ writeMVar :: MVar a -> a -> IO ()
 writeMVar mvar value = mask_ $ do
     tryTakeMVar mvar
     putMVar mvar value
+
+signalBind :: (MonadIO m) => Signal a -> (a -> FRPT m (Signal b)) -> FRPT m (Signal b)
+signalBind sig comb = do
+    chan <- subscribe sig
+    (chan', sig') <- node
+    forkLoop $ do
+        item <- readChan chan'
+        sig'' <- error "TODO: generalize forkLoop!" -- comb item
+        sig' <-- sig''
+    return sig'
+
+newtype FRPTBuilder m a = FRPTBuilder { unBuild :: FRPT m (Signal a) }
+
+instance (MonadIO m) => Monad (FRPTBuilder m) where
+    return a = undefined
+    -- FRPTBuilder m a -> (a -> FRPTBuilder m b) -> FRPTBuilder m b
+    (>>=) (FRPTBuilder ma) f = FRPTBuilder $ do
+        undefined
+
+
